@@ -1,13 +1,19 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+const DEMO_EMAIL = "demo@plan2done.local";
+const DEMO_PASSWORD = "demopass123";
+
 async function main() {
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const user = await prisma.user.upsert({
     where: { id: "demo-user" },
-    create: { id: "demo-user", email: "demo@plan2done.local", name: "Demo User" },
-    update: {}
+    create: { id: "demo-user", email: DEMO_EMAIL, name: "Demo User", passwordHash },
+    update: { passwordHash }
   });
+  console.log(`Demo login → ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
 
   const today = new Date();
   const date = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
@@ -21,6 +27,10 @@ async function main() {
     },
     update: {}
   });
+
+  // Idempotent: clear any previously seeded rows so re-running doesn't duplicate.
+  await prisma.goal.deleteMany({ where: { dailyPlanId: plan.id } });
+  await prisma.unplannedWork.deleteMany({ where: { dailyPlanId: plan.id } });
 
   await prisma.goal.createMany({
     data: [

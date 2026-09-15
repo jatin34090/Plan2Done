@@ -5,3 +5,6 @@ dist
 .env.local
 coverage
 *.log
+.cache
+*.tsbuildinfo
+.DS_Store

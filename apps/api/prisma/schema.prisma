@@ -41,12 +41,14 @@ enum CarryForwardReason {
 }
 
 model User {
-  id          String      @id @default(cuid())
-  email       String      @unique
-  name        String
-  dailyPlans  DailyPlan[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id            String      @id @default(cuid())
+  email         String      @unique
+  name          String
+  passwordHash  String      @default("")
+  timezone      String      @default("UTC")
+  dailyPlans    DailyPlan[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model DailyPlan {
