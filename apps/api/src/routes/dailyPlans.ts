@@ -54,6 +54,10 @@ const planInclude = {
   dailySummary: true
 };
 
+// Load the full plan in a SINGLE SQL query (LATERAL joins) instead of ~20
+// sequential round-trips. Critical when the DB has high network latency.
+const planQuery = { relationLoadStrategy: "join" as const, include: planInclude };
+
 /* ----------------------------- helpers ----------------------------- */
 
 function startOfDay(date: Date) {
@@ -61,11 +65,17 @@ function startOfDay(date: Date) {
 }
 
 async function getOrCreatePlan(userId: string, date: Date) {
-  return prisma.dailyPlan.upsert({
+  // Read-first: the plan almost always exists, so this is a single round-trip.
+  const existing = await prisma.dailyPlan.findUnique({
     where: { userId_date: { userId, date } },
-    create: { userId, date },
-    update: {},
-    include: planInclude
+    ...planQuery
+  });
+  if (existing) return existing;
+
+  await prisma.dailyPlan.create({ data: { userId, date } });
+  return prisma.dailyPlan.findUnique({
+    where: { userId_date: { userId, date } },
+    ...planQuery
   });
 }
 
@@ -120,7 +130,7 @@ router.get("/", async (req: AuthedRequest, res, next) => {
     }
     const plans = await prisma.dailyPlan.findMany({
       where,
-      include: planInclude,
+      ...planQuery,
       orderBy: { date: "desc" },
       take: 120
     });
@@ -159,7 +169,7 @@ router.patch("/:dailyPlanId", async (req: AuthedRequest, res, next) => {
     const plan = await prisma.dailyPlan.update({
       where: { id: req.params.dailyPlanId },
       data,
-      include: planInclude
+      ...planQuery
     });
     res.json(plan);
   } catch (error) {
@@ -457,7 +467,7 @@ router.post("/:dailyPlanId/close", async (req: AuthedRequest, res, next) => {
     const plan = await prisma.dailyPlan.update({
       where: { id: req.params.dailyPlanId },
       data: { closedAt: new Date(), stage: "REFLECTION", overallRating },
-      include: planInclude
+      ...planQuery
     });
 
     const scores = calculateDailyScore(plan);
@@ -502,7 +512,7 @@ router.post("/:dailyPlanId/ai-summary", async (req: AuthedRequest, res, next) =>
     }
     const plan = await prisma.dailyPlan.findUnique({
       where: { id: req.params.dailyPlanId },
-      include: planInclude
+      ...planQuery
     });
     if (!plan) {
       res.status(404).json({ message: "Plan not found" });
@@ -545,7 +555,7 @@ router.post("/:dailyPlanId/parse-evening", async (req: AuthedRequest, res, next)
     const { text, apply } = z.object({ text: z.string().min(1), apply: z.boolean().default(false) }).parse(req.body);
     const plan = await prisma.dailyPlan.findUnique({
       where: { id: req.params.dailyPlanId },
-      include: planInclude
+      ...planQuery
     });
     if (!plan) {
       res.status(404).json({ message: "Plan not found" });
