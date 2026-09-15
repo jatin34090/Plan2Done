@@ -1,0 +1,22 @@
+{
+  "name": "plan2done",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Daily goal planning, execution journaling, and plan-vs-actual reflection.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace @plan2done/api\" \"npm run dev --workspace @plan2done/web\"",
+    "build": "npm run build --workspace @plan2done/api && npm run build --workspace @plan2done/web",
+    "lint": "npm run lint --workspace @plan2done/web",
+    "prisma:generate": "cd apps/api && prisma generate",
+    "prisma:migrate": "cd apps/api && prisma migrate dev",
+    "seed": "npm run seed --workspace @plan2done/api"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prisma": "^5.22.0"
+  }
+}

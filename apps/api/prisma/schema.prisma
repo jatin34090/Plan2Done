@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum GoalPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum GoalStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  PARTIAL
+  SKIPPED
+  CARRIED_FORWARD
+}
+
+enum TimeEntryKind {
+  PLANNED
+  ACTUAL
+  UNPLANNED
+  BREAK
+}
+
+enum CarryForwardReason {
+  NOT_ENOUGH_TIME
+  LOW_PRIORITY
+  BLOCKED
+  UNEXPECTED_WORK
+  TOO_LARGE
+  NO_LONGER_RELEVANT
+}
+
+model User {
+  id          String      @id @default(cuid())
+  email       String      @unique
+  name        String
+  dailyPlans  DailyPlan[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model DailyPlan {
+  id                     String             @id @default(cuid())
+  userId                 String
+  date                   DateTime
+  stage                  String             @default("MORNING_PLAN")
+  whyTodayMatters        String?
+  plannedMinutes         Int                @default(0)
+  actualMinutes          Int                @default(0)
+  unplannedMinutes       Int                @default(0)
+  overallRating          Int?
+  closedAt               DateTime?
+  goals                  Goal[]
+  unplannedWork          UnplannedWork[]
+  timelineEvents         TimelineEvent[]
+  dailyReflection        DailyReflection?
+  dailySummary           DailySummary?
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  @@unique([userId, date])
+  @@index([date])
+}
+
+model Goal {
+  id                     String             @id @default(cuid())
+  dailyPlanId            String
+  title                  String
+  plannedOutcome         String?
+  actualOutcome          String?
+  priority               GoalPriority       @default(MEDIUM)
+  status                 GoalStatus         @default(PLANNED)
+  expectedMinutes        Int                @default(0)
+  actualMinutes          Int                @default(0)
+  importance             String?
+  blocker                String?
+  carryForwardReason     CarryForwardReason?
+  carryForwardTargetDate DateTime?
+  tasks                  GoalTask[]
+  timeEntries            TimeEntry[]
+  reflection             GoalReflection?
+  dailyPlan              DailyPlan          @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+}
+
+model GoalTask {
+  id          String     @id @default(cuid())
+  goalId      String
+  parentId    String?
+  title       String
+  status      GoalStatus @default(PLANNED)
+  order       Int        @default(0)
+  goal        Goal       @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model TimeEntry {
+  id          String        @id @default(cuid())
+  goalId      String?
+  dailyPlanId String
+  kind        TimeEntryKind @default(ACTUAL)
+  label       String
+  startedAt   DateTime?
+  endedAt     DateTime?
+  minutes     Int          @default(0)
+  notes       String?
+  goal        Goal?        @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  createdAt   DateTime     @default(now())
+}
+
+model UnplannedWork {
+  id          String    @id @default(cuid())
+  dailyPlanId String
+  title       String
+  minutes     Int       @default(0)
+  notes       String?
+  dailyPlan   DailyPlan @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+}
+
+model TimelineEvent {
+  id          String        @id @default(cuid())
+  dailyPlanId String
+  time        DateTime
+  label       String
+  kind        TimeEntryKind @default(ACTUAL)
+  minutes     Int?
+  dailyPlan   DailyPlan     @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+}
+
+model GoalReflection {
+  id          String   @id @default(cuid())
+  goalId      String   @unique
+  accomplished String?
+  notCompletedReason String?
+  lesson      String?
+  goal        Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DailyReflection {
+  id                  String    @id @default(cuid())
+  dailyPlanId          String    @unique
+  accomplishments      String?
+  incompleteWork       String?
+  incompleteReason     String?
+  unexpectedWork       String?
+  lesson               String?
+  biggestAchievement   String?
+  biggestBlocker       String?
+  moveToTomorrow       String?
+  dailyPlan            DailyPlan @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model DailySummary {
+  id                   String    @id @default(cuid())
+  dailyPlanId           String    @unique
+  completionRate        Int
+  dailyScore            Int
+  priorityScore         Int
+  estimationScore       Int
+  reflectionScore       Int
+  narrative             String
+  tomorrowSuggestion    String?
+  realityCheck          String?
+  dailyPlan             DailyPlan @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  createdAt             DateTime  @default(now())
+}
