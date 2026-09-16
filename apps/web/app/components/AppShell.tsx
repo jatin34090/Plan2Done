@@ -8,6 +8,12 @@ import { useAuth } from "../lib/auth";
 
 const PUBLIC_ROUTES = ["/login", "/register"];
 
+const NAV = [
+  { href: "/", label: "Today", icon: Target },
+  { href: "/history", label: "History", icon: History },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 }
+];
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
   const pathname = usePathname();
@@ -39,11 +45,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const nav = [
-    { href: "/", label: "Today", icon: <Target size={18} /> },
-    { href: "/history", label: "History", icon: <History size={18} /> },
-    { href: "/analytics", label: "Analytics", icon: <BarChart3 size={18} /> }
-  ];
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
     <div className="appLayout">
@@ -52,30 +54,46 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <CalendarClock size={22} />
           <span>Plan2Done</span>
         </div>
+
+        {/* Desktop / tablet top nav */}
         <nav className="mainNav">
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={pathname === item.href ? "navItem active" : "navItem"}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </Link>
-          ))}
+          {NAV.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link key={item.href} href={item.href} className={isActive(item.href) ? "navItem active" : "navItem"}>
+                <Icon size={18} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
         </nav>
+
         <div className="userMenu">
-          <div className="avatar">{user.name.slice(0, 1).toUpperCase()}</div>
+          <div className="avatar" title={user.name}>{user.name.slice(0, 1).toUpperCase()}</div>
           <div className="userInfo">
             <strong>{user.name}</strong>
             <span>{user.email}</span>
           </div>
-          <button className="ghostButton" onClick={() => logout()} aria-label="Log out">
+          <button className="ghostButton" onClick={() => logout()} aria-label="Log out" title="Log out">
             <LogOut size={18} />
           </button>
         </div>
       </header>
+
       <main className="appMain">{children}</main>
+
+      {/* Mobile bottom tab bar */}
+      <nav className="bottomNav">
+        {NAV.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.href} href={item.href} className={isActive(item.href) ? "tabItem active" : "tabItem"}>
+              <Icon size={22} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

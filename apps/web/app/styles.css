@@ -129,10 +129,28 @@ a { color: inherit; text-decoration: none; }
   position: sticky; top: 0; z-index: 20;
   display: flex; align-items: center; gap: 24px;
   padding: 12px clamp(16px, 4vw, 40px);
+  padding-top: calc(12px + env(safe-area-inset-top));
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
 }
+
+/* install prompt banner */
+.installBanner {
+  position: fixed; z-index: 40;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  width: min(520px, calc(100% - 24px));
+  display: flex; align-items: center; gap: 10px;
+  background: var(--ink); color: #fff;
+  padding: 12px 14px; border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.28);
+  font-size: 14px;
+}
+.installBanner span { flex: 1; }
+.installBanner .primaryButton { padding: 8px 14px; }
+.installBanner .ghostButton { color: rgba(255, 255, 255, 0.7); }
+.installBanner .ghostButton:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--accent); font-size: 17px; }
 .mainNav { display: flex; gap: 4px; margin-left: 8px; }
 .navItem {
@@ -152,6 +170,17 @@ a { color: inherit; text-decoration: none; }
 .userInfo strong { font-size: 13px; }
 .userInfo span { font-size: 12px; color: var(--muted); }
 .appMain { padding: clamp(16px, 4vw, 40px); }
+
+/* mobile bottom tab bar (hidden on desktop) */
+.bottomNav { display: none; }
+.tabItem {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 8px 0; font-size: 11px; font-weight: 600; color: var(--muted);
+  transition: color 0.15s;
+}
+.tabItem.active { color: var(--accent); }
+.tabItem svg { stroke-width: 2; }
 
 /* ---------- dashboard layout ---------- */
 .dashboard { width: min(1120px, 100%); margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
@@ -217,14 +246,17 @@ a { color: inherit; text-decoration: none; }
 .goalCard { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); overflow: hidden; }
 .goalCard.status-completed { background: #f6fef9; border-color: #d1fadf; }
 .goalCard.status-skipped { opacity: 0.7; }
-.goalMain { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
-.expandBtn { background: transparent; border: none; color: var(--muted); padding: 2px; display: flex; }
-.statusSelect { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font-size: 13px; background: var(--panel); }
-.goalTitleBlock { flex: 1; min-width: 0; }
-.goalTitle { font-weight: 600; display: block; }
-.goalMeta { display: flex; flex-wrap: wrap; gap: 6px; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.goalMain { display: flex; align-items: flex-start; gap: 8px; padding: 12px 14px; }
+.expandBtn { background: transparent; border: none; color: var(--muted); padding: 4px; display: flex; margin-top: 1px; }
+.goalBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.goalTopRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.goalTitle { font-weight: 600; font-size: 15px; line-height: 1.35; word-break: break-word; }
+.goalControls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; }
+.statusSelect { border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px; font-size: 13px; background: var(--panel); }
+.goalMeta { display: flex; flex-wrap: wrap; gap: 6px; color: var(--muted); font-size: 12px; }
 .priorityTag { font-weight: 700; }
-.goalActions { display: flex; gap: 2px; }
+.goalActions { display: flex; gap: 2px; flex: none; }
+.goalActions .ghostButton { padding: 8px; }
 .goalDetails { padding: 0 14px 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px; padding-top: 14px; }
 .detailGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
 .detailGrid input, .detailGrid select { font-weight: 400; }
@@ -342,13 +374,51 @@ a { color: inherit; text-decoration: none; }
 /* ---------- responsive ---------- */
 @media (max-width: 860px) {
   .statRow, .twoCol, .aiTools { grid-template-columns: 1fr; }
-  .addGoalForm { grid-template-columns: 1fr 1fr; }
-  .userInfo { display: none; }
   .mainNav .navItem span { display: none; }
 }
+
+/* Phone: switch to a bottom tab bar and stack everything */
+@media (max-width: 680px) {
+  .appHeader { gap: 10px; padding: 10px 16px; }
+  .mainNav { display: none; }
+  .userInfo { display: none; }
+  .appMain { padding: 16px 16px calc(74px + env(safe-area-inset-bottom)); }
+  .bottomNav {
+    display: flex;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    background: var(--panel); border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -2px 12px rgba(16, 24, 40, 0.06);
+  }
+  .dashboard { gap: 14px; }
+  .dayHeader { flex-direction: column; align-items: stretch; gap: 12px; }
+  .dayHeader h1 { font-size: 22px; }
+  .headerActions { justify-content: space-between; }
+  .panel { padding: 16px; }
+  .addGoalForm { grid-template-columns: 1fr 1fr; }
+  .addGoalForm > input:first-child { grid-column: 1 / -1; }
+  .addGoalForm .primaryButton { grid-column: 1 / -1; }
+  .aiToolActions { flex-direction: column; }
+  .aiToolActions .primaryButton, .aiToolActions .ghostButton { width: 100%; }
+  .modalOverlay { padding: 16px 12px; }
+  .modalCard { padding: 18px; border-radius: 16px; }
+  .installBanner { bottom: calc(86px + env(safe-area-inset-bottom)); }
+}
+
 @media (max-width: 520px) {
-  .addGoalForm { grid-template-columns: 1fr; }
   .closureCounts { grid-template-columns: repeat(2, 1fr); }
-  .tableHead, .comparisonRow { grid-template-columns: 1fr; }
-  .tableHead span:not(:first-child) { display: none; }
+  .tableHead { display: none; }
+  .comparisonRow { grid-template-columns: 1fr; gap: 4px; padding: 12px 0; }
+  .comparisonRow strong { font-size: 15px; }
+  .comparisonRow p:nth-of-type(1)::before { content: "Planned — "; font-weight: 700; color: var(--muted); }
+  .comparisonRow p:nth-of-type(2)::before { content: "Actual — "; font-weight: 700; color: var(--accent); }
+  .metricRow { grid-template-columns: 1fr 56px 38px; }
+  .barRow { grid-template-columns: 104px 1fr 38px; }
+}
+
+/* Larger tap targets on touch devices */
+@media (hover: none) {
+  .ghostButton { padding: 8px; }
+  .statusSelect, .addGoalForm select, .addGoalForm input { min-height: 42px; }
+  .navItem, .tabItem { min-height: 44px; }
 }

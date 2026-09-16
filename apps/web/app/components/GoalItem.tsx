@@ -39,48 +39,51 @@ export function GoalItem({ goal, locked, onUpdate, onDelete, onCarry, onAddSubta
     <div className={`goalCard status-${goal.status.toLowerCase()}`}>
       <div className="goalMain">
         <button className="expandBtn" onClick={() => setExpanded((v) => !v)} aria-label="Toggle details">
-          {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
         </button>
 
-        <select
-          className="statusSelect"
-          value={goal.status}
-          disabled={locked}
-          onChange={(e) => onUpdate({ status: e.target.value as Status })}
-          aria-label="Status"
-        >
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.icon} {s.label}
-            </option>
-          ))}
-          {goal.status === "CARRIED_FORWARD" && <option value="CARRIED_FORWARD">➡️ Carried forward</option>}
-        </select>
+        <div className="goalBody">
+          <div className="goalTopRow">
+            <span className="goalTitle" style={{ textDecoration: goal.status === "COMPLETED" ? "line-through" : "none" }}>
+              {goal.title}
+            </span>
+            {!locked && (
+              <div className="goalActions">
+                {goal.status !== "COMPLETED" && (
+                  <button className="ghostButton" title="Carry forward" onClick={() => setCarryOpen((v) => !v)}>
+                    <CornerUpRight size={16} />
+                  </button>
+                )}
+                <button className="ghostButton danger" title="Delete" onClick={onDelete}>
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            )}
+          </div>
 
-        <div className="goalTitleBlock">
-          <span className="goalTitle" style={{ textDecoration: goal.status === "COMPLETED" ? "line-through" : "none" }}>
-            {goal.title}
-          </span>
-          <div className="goalMeta">
-            <span className="priorityTag" style={{ color: meta.color }}>{meta.dot} {meta.label}</span>
-            <span>· {formatMinutes(goal.expectedMinutes)} planned</span>
-            {goal.actualMinutes > 0 && <span>· {formatMinutes(goal.actualMinutes)} actual</span>}
-            {goal.tasks.length > 0 && <span>· {done}/{goal.tasks.length} subtasks</span>}
+          <div className="goalControls">
+            <select
+              className="statusSelect"
+              value={goal.status}
+              disabled={locked}
+              onChange={(e) => onUpdate({ status: e.target.value as Status })}
+              aria-label="Status"
+            >
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.icon} {s.label}
+                </option>
+              ))}
+              {goal.status === "CARRIED_FORWARD" && <option value="CARRIED_FORWARD">➡️ Carried forward</option>}
+            </select>
+            <div className="goalMeta">
+              <span className="priorityTag" style={{ color: meta.color }}>{meta.dot} {meta.label}</span>
+              <span>{formatMinutes(goal.expectedMinutes)} planned</span>
+              {goal.actualMinutes > 0 && <span>· {formatMinutes(goal.actualMinutes)} actual</span>}
+              {goal.tasks.length > 0 && <span>· {done}/{goal.tasks.length} done</span>}
+            </div>
           </div>
         </div>
-
-        {!locked && (
-          <div className="goalActions">
-            {goal.status !== "COMPLETED" && (
-              <button className="ghostButton" title="Carry forward" onClick={() => setCarryOpen((v) => !v)}>
-                <CornerUpRight size={16} />
-              </button>
-            )}
-            <button className="ghostButton danger" title="Delete" onClick={onDelete}>
-              <Trash2 size={16} />
-            </button>
-          </div>
-        )}
       </div>
 
       {carryOpen && !locked && (
