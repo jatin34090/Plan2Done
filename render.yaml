@@ -1,0 +1,25 @@
+# Render Blueprint for the Plan2Done API.
+# In Render: New + -> Blueprint -> pick this repo. It reads this file and
+# prompts for the secret env vars (DATABASE_URL, DIRECT_URL, WEB_ORIGIN).
+services:
+  - type: web
+    name: plan2done-api
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm install && npm run prisma:generate && npm run build --workspace @plan2done/api
+    startCommand: npm run start --workspace @plan2done/api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: JWT_SECRET
+        generateValue: true # Render generates a strong secret automatically
+      - key: DATABASE_URL
+        sync: false # paste your Supabase pooled/direct URL in the dashboard
+      - key: DIRECT_URL
+        sync: false # same value is fine for Supabase direct connection
+      - key: WEB_ORIGIN
+        sync: false # set to your Vercel URL, e.g. https://plan2done.vercel.app
+      - key: ANTHROPIC_API_KEY
+        sync: false # optional; leave blank to use the heuristic engine
