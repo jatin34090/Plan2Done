@@ -73,7 +73,8 @@ async function getOrCreatePlan(userId: string, date: Date) {
   if (existing) return existing;
 
   await prisma.dailyPlan.create({ data: { userId, date } });
-  return prisma.dailyPlan.findUnique({
+  // findUniqueOrThrow guarantees a non-null return type (the row was just created).
+  return prisma.dailyPlan.findUniqueOrThrow({
     where: { userId_date: { userId, date } },
     ...planQuery
   });

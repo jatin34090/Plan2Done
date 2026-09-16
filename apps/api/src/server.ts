@@ -12,9 +12,23 @@ import { dailyPlansRouter } from "./routes/dailyPlans.js";
 const app = express();
 const port = Number(process.env.PORT ?? 4000);
 
+// WEB_ORIGIN may list several allowed origins, comma-separated
+// (e.g. the custom domain + the Vercel URL + localhost).
+const allowedOrigins = (process.env.WEB_ORIGIN ?? "http://localhost:3000")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
+    origin(origin, callback) {
+      // Allow non-browser clients (no Origin header) and any listed origin.
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true
   })
 );

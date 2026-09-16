@@ -20,6 +20,7 @@ services:
       - key: DIRECT_URL
         sync: false # same value is fine for Supabase direct connection
       - key: WEB_ORIGIN
-        sync: false # set to your Vercel URL, e.g. https://plan2done.vercel.app
+        # Comma-separate multiple allowed origins if needed (custom domain + Vercel URL).
+        value: https://plan2done.jatsolutions.in
       - key: ANTHROPIC_API_KEY
         sync: false # optional; leave blank to use the heuristic engine
