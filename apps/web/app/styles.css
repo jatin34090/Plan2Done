@@ -276,8 +276,16 @@ a { color: inherit; text-decoration: none; }
 .chip { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; }
 .chip:hover { border-color: var(--accent); color: var(--accent); }
 
-.addGoalForm { display: grid; grid-template-columns: 1fr 150px 90px auto; gap: 8px; margin-top: 14px; }
-.addGoalForm input, .addGoalForm select { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+.addGoalForm { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.addGoalControls { display: flex; flex-wrap: wrap; gap: 8px; }
+.addGoalForm input, .addGoalForm select { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; background: var(--panel); color: var(--ink); }
+.addGoalForm .goalTitleInput { width: 100%; }
+.addGoalForm .goalPriority { flex: 1 1 130px; min-width: 0; }
+.minField { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 10px; padding: 0 12px; background: var(--panel); }
+.minField input { width: 46px; border: none; padding: 10px 0; text-align: right; }
+.minField input:focus { box-shadow: none; }
+.minField span { color: var(--muted); font-size: 13px; }
+.addGoalForm .addBtn { flex: 1 1 auto; }
 
 /* ---------- comparison table ---------- */
 .comparisonTable { display: flex; flex-direction: column; }
@@ -397,9 +405,6 @@ a { color: inherit; text-decoration: none; }
   .dayHeader h1 { font-size: 22px; }
   .headerActions { justify-content: space-between; }
   .panel { padding: 16px; }
-  .addGoalForm { grid-template-columns: 1fr 1fr; }
-  .addGoalForm > input:first-child { grid-column: 1 / -1; }
-  .addGoalForm .primaryButton { grid-column: 1 / -1; }
   .aiToolActions { flex-direction: column; }
   .aiToolActions .primaryButton, .aiToolActions .ghostButton { width: 100%; }
   .modalOverlay { padding: 16px 12px; }

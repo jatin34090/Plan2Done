@@ -189,14 +189,31 @@ export default function DashboardPage() {
 
         {!locked && (
           <form className="addGoalForm" onSubmit={addGoal}>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Add a goal…" />
-            <select value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
-              {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as Priority[]).map((p) => (
-                <option key={p} value={p}>{PRIORITY_META[p].dot} {PRIORITY_META[p].label}</option>
-              ))}
-            </select>
-            <input type="number" min={0} step={15} value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} title="Estimated minutes" />
-            <button className="primaryButton" type="submit"><Plus size={16} /> Add</button>
+            <input
+              className="goalTitleInput"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Add a goal…"
+            />
+            <div className="addGoalControls">
+              <select className="goalPriority" value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
+                {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as Priority[]).map((p) => (
+                  <option key={p} value={p}>{PRIORITY_META[p].dot} {PRIORITY_META[p].label}</option>
+                ))}
+              </select>
+              <label className="minField">
+                <input
+                  type="number"
+                  min={0}
+                  step={15}
+                  value={minutes}
+                  onChange={(e) => setMinutes(Number(e.target.value))}
+                  aria-label="Estimated minutes"
+                />
+                <span>min</span>
+              </label>
+              <button className="primaryButton addBtn" type="submit"><Plus size={16} /> Add</button>
+            </div>
           </form>
         )}
       </section>
