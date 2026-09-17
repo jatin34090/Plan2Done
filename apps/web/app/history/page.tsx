@@ -52,7 +52,7 @@ export default function HistoryPage() {
 
       <form className="searchBar" onSubmit={runSearch}>
         <Search size={18} />
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder='Search goals & outcomes — e.g. "authentication"' />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search goals & outcomes…" />
         <button className="primaryButton" type="submit" disabled={searching}>{searching ? "…" : "Search"}</button>
       </form>
 
