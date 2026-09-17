@@ -240,6 +240,7 @@ a { color: inherit; text-decoration: none; }
 .scoreCircle.small::before { inset: 7px; }
 .scoreCircle.small span { font-size: 20px; }
 .scoreCircle.small small { display: none; }
+.scoreHint { text-align: center; margin: 0; }
 .scoreRows { width: 100%; display: flex; flex-direction: column; gap: 10px; }
 .metricRow { display: grid; grid-template-columns: 1fr 80px 40px; align-items: center; gap: 8px; font-size: 13px; }
 .metricRow > span { color: var(--muted); }
