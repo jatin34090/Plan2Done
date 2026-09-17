@@ -23,7 +23,8 @@ export function ClosureDialog({ plan, onClose, onSaveReflection, onCloseDay }: P
     biggestBlocker: r?.biggestBlocker ?? "",
     moveToTomorrow: r?.moveToTomorrow ?? ""
   });
-  const [rating, setRating] = useState(plan.overallRating ?? 7);
+  // Unrated until the user actually chooses — no biased default.
+  const [rating, setRating] = useState<number | null>(plan.overallRating ?? null);
   const [busy, setBusy] = useState(false);
 
   const counts = {
@@ -40,7 +41,7 @@ export function ClosureDialog({ plan, onClose, onSaveReflection, onCloseDay }: P
     setBusy(true);
     try {
       await onSaveReflection(form);
-      await onCloseDay(rating);
+      await onCloseDay(rating ?? undefined);
       onClose();
     } finally {
       setBusy(false);
@@ -80,8 +81,15 @@ export function ClosureDialog({ plan, onClose, onSaveReflection, onCloseDay }: P
           <label className="fullField">What should move to tomorrow?<input value={form.moveToTomorrow} onChange={set("moveToTomorrow")} /></label>
 
           <label className="fullField">
-            Overall day rating: <strong>{rating}/10</strong>
-            <input type="range" min={1} max={10} value={rating} onChange={(e) => setRating(Number(e.target.value))} />
+            Overall day rating: <strong>{rating === null ? "Not rated" : `${rating}/10`}</strong>
+            <input
+              type="range"
+              min={1}
+              max={10}
+              value={rating ?? 5}
+              onChange={(e) => setRating(Number(e.target.value))}
+            />
+            {rating === null && <small className="muted">Drag to rate — or leave it unrated.</small>}
           </label>
         </div>
 
