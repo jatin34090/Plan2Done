@@ -51,6 +51,8 @@ export function GoogleButton() {
     if (!CLIENT_ID) return;
     let cancelled = false;
 
+    let observer: ResizeObserver | null = null;
+
     loadScript()
       .then(() => {
         if (cancelled || !containerRef.current) return;
@@ -67,19 +69,33 @@ export function GoogleButton() {
             }
           }
         });
-        id.renderButton(containerRef.current, {
-          theme: "outline",
-          size: "large",
-          text: "continue_with",
-          shape: "pill",
-          width: 320,
-          logo_alignment: "center"
-        });
+
+        // Google's button takes a pixel width (max 400), so render it to the
+        // container's width and re-render on resize to stay responsive.
+        const renderButton = () => {
+          const el = containerRef.current;
+          if (!el) return;
+          const width = Math.min(400, Math.max(200, Math.floor(el.clientWidth || 300)));
+          el.innerHTML = "";
+          id.renderButton(el, {
+            theme: "outline",
+            size: "large",
+            text: "continue_with",
+            shape: "pill",
+            width,
+            logo_alignment: "center"
+          });
+        };
+        renderButton();
+
+        observer = new ResizeObserver(() => renderButton());
+        observer.observe(containerRef.current);
       })
       .catch(() => setError("Could not load Google sign-in"));
 
     return () => {
       cancelled = true;
+      observer?.disconnect();
     };
   }, [loginWithGoogle, router]);
 
