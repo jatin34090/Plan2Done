@@ -192,21 +192,34 @@ export interface TomorrowPlanItem {
 export async function planTomorrow(
   unfinished: Goal[],
   availableMinutes: number,
-  avgDailyCompleted: number
+  avgDailyCompleted: number,
+  historyDays = 0
 ): Promise<{ items: TomorrowPlanItem[]; note: string; source: "ai" | "heuristic" }> {
+  const hasHistory = historyDays >= 3 && avgDailyCompleted > 0;
   const cap = Math.max(2, Math.round(avgDailyCompleted || 4));
   const heuristicItems: TomorrowPlanItem[] = unfinished.slice(0, cap).map((goal) => ({
     title: goal.title,
     priority: goal.priority,
     expectedMinutes: goal.expectedMinutes || 60
   }));
-  const heuristic = {
-    items: heuristicItems,
-    note: `Based on your history you finish about ${cap} goals a day, so keep tomorrow focused.`,
-    source: "heuristic" as const
-  };
 
-  if (!API_KEY) return heuristic;
+  // Build an honest note that doesn't invent history for new users.
+  let note: string;
+  if (unfinished.length === 0) {
+    note =
+      historyDays > 0
+        ? "No unfinished goals to carry over — nice work. Add tomorrow's top priorities when you're ready."
+        : "You haven't added any goals yet. Add a few today and tomorrow I'll suggest a realistic plan from what's left plus your usual pace.";
+  } else if (hasHistory) {
+    note = `Based on your recent days you finish about ${cap} goals a day, so keep tomorrow focused.`;
+  } else {
+    note = "Here are your unfinished goals to start from. I'll tailor this to your pace once you've logged a few days.";
+  }
+
+  const heuristic = { items: heuristicItems, note, source: "heuristic" as const };
+
+  // Nothing to plan and no history — skip the LLM, just return the honest note.
+  if (!API_KEY || (unfinished.length === 0 && !hasHistory)) return heuristic;
 
   const system =
     "You are a planning assistant for Plan2Done. Given unfinished goals, available time, and the user's " +

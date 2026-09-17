@@ -604,19 +604,21 @@ router.post("/:dailyPlanId/plan-tomorrow", async (req: AuthedRequest, res, next)
 
     const unfinished = plan.goals.filter((g) => g.status !== "COMPLETED" && g.status !== "CARRIED_FORWARD");
 
-    // Average completed goals/day over the last 30 days.
+    // Average completed goals/day over the last 30 days — only count days that
+    // actually had goals, so a new user isn't given fabricated "history".
     const since = new Date();
     since.setDate(since.getDate() - 30);
     const recent = await prisma.dailyPlan.findMany({
       where: { userId: req.userId!, date: { gte: startOfDay(since) } },
       include: { goals: true }
     });
-    const completedCounts = recent.map((p) => p.goals.filter((g) => g.status === "COMPLETED").length);
+    const activeDays = recent.filter((p) => p.goals.length > 0);
+    const completedCounts = activeDays.map((p) => p.goals.filter((g) => g.status === "COMPLETED").length);
     const avg = completedCounts.length
       ? completedCounts.reduce((a, b) => a + b, 0) / completedCounts.length
-      : 4;
+      : 0;
 
-    const suggestion = await planTomorrow(unfinished, availableMinutes, avg);
+    const suggestion = await planTomorrow(unfinished, availableMinutes, avg, activeDays.length);
     res.json(suggestion);
   } catch (error) {
     next(error);
