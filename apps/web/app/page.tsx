@@ -256,8 +256,9 @@ export default function DashboardPage() {
           <Insight icon={<CalendarDays />} title="Tomorrow" text={plan.dailySummary?.tomorrowSuggestion ?? "Carry unfinished goals forward with a reason, or generate a plan below."} />
         </div>
 
-        {!locked && (
-          <div className="aiTools">
+        <div className="aiTools">
+          {/* Evening brain-dump edits today's plan, so only before the day is closed. */}
+          {!locked && (
             <div className="aiTool">
               <h3><Wand2 size={16} /> Evening brain-dump → structured</h3>
               <textarea value={eveningText} onChange={(e) => setEveningText(e.target.value)} rows={3} placeholder="e.g. Finished the auth fix, only got halfway through API testing because a production issue ate 90 minutes." />
@@ -267,25 +268,26 @@ export default function DashboardPage() {
               </div>
               {eveningResult && <p className="aiResult">{eveningResult}</p>}
             </div>
+          )}
 
-            <div className="aiTool">
-              <h3><CalendarDays size={16} /> Plan my tomorrow</h3>
-              <p className="muted">Suggests a realistic plan from unfinished goals and your typical throughput.</p>
-              <button className="primaryButton" disabled={aiBusy} onClick={runTomorrow}>Generate tomorrow&apos;s plan</button>
-              {tomorrow && (
-                <div className="tomorrowPlan">
-                  {tomorrow.items.map((item, i) => (
-                    <div key={i} className="tomorrowItem">
-                      <span>{PRIORITY_META[item.priority].dot} {item.title}</span>
-                      <span>{formatMinutes(item.expectedMinutes)}</span>
-                    </div>
-                  ))}
-                  <p className="aiResult">{tomorrow.note}</p>
-                </div>
-              )}
-            </div>
+          {/* Plan tomorrow stays available after closing — that's when you'd want it. */}
+          <div className="aiTool">
+            <h3><CalendarDays size={16} /> Plan my tomorrow</h3>
+            <p className="muted">Suggests a realistic plan from unfinished goals and your typical throughput.</p>
+            <button className="primaryButton" disabled={aiBusy} onClick={runTomorrow}>Generate tomorrow&apos;s plan</button>
+            {tomorrow && (
+              <div className="tomorrowPlan">
+                {tomorrow.items.map((item, i) => (
+                  <div key={i} className="tomorrowItem">
+                    <span>{PRIORITY_META[item.priority].dot} {item.title}</span>
+                    <span>{formatMinutes(item.expectedMinutes)}</span>
+                  </div>
+                ))}
+                <p className="aiResult">{tomorrow.note}</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </section>
 
       {showClosure && (
