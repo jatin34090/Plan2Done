@@ -82,10 +82,12 @@ export function ClosureDialog({ plan, onClose, onSaveReflection, onCloseDay }: P
           <label className="fullField">
             Overall day rating: <strong>{rating}/10</strong>
             <input
+              className="ratingRange"
               type="range"
               min={0}
               max={10}
               value={rating}
+              style={{ ["--fill" as string]: `${(rating / 10) * 100}%` }}
               onChange={(e) => setRating(Number(e.target.value))}
             />
           </label>

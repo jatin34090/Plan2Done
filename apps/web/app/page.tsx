@@ -107,6 +107,7 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard">
+      {actions.busy && <div className="topLoadingBar" aria-hidden />}
       {/* Header */}
       <section className="dayHeader">
         <div>
