@@ -36,7 +36,10 @@ export function GoalItem({ goal, locked, onUpdate, onDelete, onCarry, onAddSubta
   const tomorrowStr = tomorrow.toISOString().slice(0, 10);
 
   return (
-    <div className={`goalCard status-${goal.status.toLowerCase()}`}>
+    <div
+      className={`goalCard status-${goal.status.toLowerCase()}`}
+      style={{ boxShadow: `inset 4px 0 0 ${meta.color}` }}
+    >
       <div className="goalMain">
         <button className="expandBtn" onClick={() => setExpanded((v) => !v)} aria-label="Toggle details">
           {expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
@@ -76,12 +79,10 @@ export function GoalItem({ goal, locked, onUpdate, onDelete, onCarry, onAddSubta
               ))}
               {goal.status === "CARRIED_FORWARD" && <option value="CARRIED_FORWARD">➡️ Carried forward</option>}
             </select>
-            <div className="goalMeta">
-              <span className="priorityTag" style={{ color: meta.color }}>{meta.dot} {meta.label}</span>
-              <span>{formatMinutes(goal.expectedMinutes)} planned</span>
-              {goal.actualMinutes > 0 && <span>· {formatMinutes(goal.actualMinutes)} actual</span>}
-              {goal.tasks.length > 0 && <span>· {done}/{goal.tasks.length} done</span>}
-            </div>
+            <span className={`priorityPill pri-${goal.priority.toLowerCase()}`}>{meta.label}</span>
+            <span className="timePill">{formatMinutes(goal.expectedMinutes)} planned</span>
+            {goal.actualMinutes > 0 && <span className="timePill actual">{formatMinutes(goal.actualMinutes)} actual</span>}
+            {goal.tasks.length > 0 && <span className="timePill">{done}/{goal.tasks.length} done</span>}
           </div>
         </div>
       </div>
