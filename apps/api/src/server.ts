@@ -4,6 +4,7 @@ import "dotenv/config";
 import express from "express";
 import { ZodError } from "zod";
 import { aiEnabled } from "./lib/ai.js";
+import { startKeepAlive } from "./lib/keepAlive.js";
 import { warmDatabase } from "./prisma.js";
 import { analyticsRouter } from "./routes/analytics.js";
 import { authRouter } from "./routes/auth.js";
@@ -56,4 +57,5 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
 app.listen(port, () => {
   console.log(`Plan2Done API running on http://localhost:${port} (AI ${aiEnabled ? "enabled" : "heuristic"})`);
   warmDatabase();
+  startKeepAlive();
 });
