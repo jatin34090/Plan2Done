@@ -123,6 +123,16 @@ export const CARRY_REASONS: { value: CarryReason; label: string }[] = [
   { value: "NO_LONGER_RELEVANT", label: "No longer relevant" }
 ];
 
+/** Local YYYY-MM-DD for today + offsetDays (uses local calendar date, not UTC). */
+export function dateStr(offsetDays = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function formatMinutes(minutes: number) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;

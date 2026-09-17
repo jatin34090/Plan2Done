@@ -5,7 +5,8 @@ import {
   Activity,
   AlertTriangle,
   CalendarDays,
-  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Flame,
   Moon,
@@ -16,7 +17,7 @@ import {
 } from "lucide-react";
 import { api } from "./lib/api";
 import { usePlan } from "./lib/usePlan";
-import { formatMinutes, PRIORITY_META } from "./lib/types";
+import { dateStr, formatMinutes, PRIORITY_META } from "./lib/types";
 import type { Priority, Status } from "./lib/types";
 import { GoalItem } from "./components/GoalItem";
 import { ClosureDialog } from "./components/ClosureDialog";
@@ -38,7 +39,9 @@ interface StreakData {
 }
 
 export default function DashboardPage() {
-  const { plan, loading, error, actions } = usePlan();
+  // Which day is shown: 0 = today, 1 = tomorrow, -1 = yesterday, etc.
+  const [dayOffset, setDayOffset] = useState(0);
+  const { plan, loading, error, actions } = usePlan(dayOffset === 0 ? undefined : dateStr(dayOffset));
   const [showClosure, setShowClosure] = useState(false);
   const [streak, setStreak] = useState<StreakData | null>(null);
 
@@ -111,8 +114,19 @@ export default function DashboardPage() {
       {/* Header */}
       <section className="dayHeader">
         <div>
-          <p className="eyebrow">{formatLongDate(plan.date)}{locked && " · Closed"}</p>
-          <h1>Today&apos;s Plan</h1>
+          <div className="dateNav">
+            <button className="ghostButton" onClick={() => setDayOffset((o) => o - 1)} aria-label="Previous day">
+              <ChevronLeft size={18} />
+            </button>
+            <p className="eyebrow">{formatLongDate(plan.date)}{locked && " · Closed"}</p>
+            <button className="ghostButton" onClick={() => setDayOffset((o) => o + 1)} aria-label="Next day">
+              <ChevronRight size={18} />
+            </button>
+            {dayOffset !== 0 && (
+              <button className="chip" onClick={() => setDayOffset(0)}>Today</button>
+            )}
+          </div>
+          <h1>{dayOffset === 0 ? "Today's Plan" : dayOffset === 1 ? "Tomorrow's Plan" : dayOffset === -1 ? "Yesterday's Plan" : "Day Plan"}</h1>
         </div>
         <div className="headerActions">
           {!locked && (
@@ -120,7 +134,7 @@ export default function DashboardPage() {
               <Moon size={16} /> Close day
             </button>
           )}
-          {streak && streak.streak > 0 && (
+          {dayOffset === 0 && streak && streak.streak > 0 && (
             <div className="streakBadge"><Flame size={16} /> {streak.streak}-day streak</div>
           )}
         </div>
@@ -284,6 +298,28 @@ export default function DashboardPage() {
                   </div>
                 ))}
                 <p className="aiResult">{tomorrow.note}</p>
+                {tomorrow.items.length > 0 ? (
+                  <button
+                    className="primaryButton"
+                    disabled={aiBusy}
+                    onClick={async () => {
+                      setAiBusy(true);
+                      try {
+                        await actions.addGoalsToTomorrow(tomorrow.items);
+                        setTomorrow(null);
+                        setDayOffset(1); // jump to tomorrow so you can review/edit
+                      } finally {
+                        setAiBusy(false);
+                      }
+                    }}
+                  >
+                    <Plus size={16} /> Add {tomorrow.items.length} to tomorrow
+                  </button>
+                ) : (
+                  <button className="ghostButton textBtn" onClick={() => setDayOffset(1)}>
+                    Go to tomorrow to add goals →
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
+import { dateStr } from "./types";
 import type { CarryReason, DailyPlan, Priority, Status } from "./types";
 
 /** Recompute the roll-up totals so progress/score update instantly on optimistic edits. */
@@ -129,6 +130,20 @@ export function usePlan(dateParam?: string) {
     closeDay: (overallRating?: number) =>
       run(api.post(`/api/daily-plans/${plan!.id}/close`, { overallRating })),
     regenerateSummary: () => run(api.post(`/api/daily-plans/${plan!.id}/ai-summary`)),
+    // Create goals on tomorrow's plan (creating that plan if needed). Returns the date.
+    addGoalsToTomorrow: (goals: { title: string; priority: Priority; expectedMinutes: number }[]) => {
+      const ds = dateStr(1);
+      return run(
+        (async () => {
+          const tomorrow = await api.get<DailyPlan>(`/api/daily-plans/${ds}`);
+          for (const g of goals) {
+            await api.post(`/api/daily-plans/${tomorrow.id}/goals`, g);
+          }
+          return ds;
+        })(),
+        false
+      );
+    },
     parseEvening: (text: string, apply: boolean) =>
       api.post<{ completed: string[]; partial: string[]; unplanned: { title: string; minutes: number }[]; reason: string | null; source: string }>(
         `/api/daily-plans/${plan!.id}/parse-evening`,

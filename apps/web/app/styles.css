@@ -205,6 +205,10 @@ a { color: inherit; text-decoration: none; }
 .eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; font-weight: 700; color: var(--muted); margin: 0 0 4px; }
 .dayHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .dayHeader h1 { font-size: 26px; }
+.dateNav { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
+.dateNav .eyebrow { margin: 0; }
+.dateNav .ghostButton { padding: 4px; }
+.dateNav .chip { margin-left: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--accent); }
 .headerActions { display: flex; align-items: center; gap: 12px; }
 .streakBadge { display: inline-flex; align-items: center; gap: 6px; background: #fef3c7; color: #b45309; padding: 8px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; }
 .backLink { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-weight: 600; font-size: 13px; margin-bottom: 6px; }
