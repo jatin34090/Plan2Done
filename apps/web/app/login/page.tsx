@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { useAuth } from "../lib/auth";
+import { GoogleButton } from "../components/GoogleButton";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -66,6 +67,8 @@ export default function LoginPage() {
             {busy ? "Signing in…" : "Sign in"}
           </button>
         </form>
+
+        <GoogleButton />
 
         <p className="authSwitch">
           New here? <Link href="/register">Create an account</Link>

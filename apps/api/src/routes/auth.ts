@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { OAuth2Client } from "google-auth-library";
 import { z } from "zod";
 import { prisma } from "../prisma.js";
 import {
@@ -28,6 +29,42 @@ const loginSchema = z.object({
 function publicUser(user: { id: string; name: string; email: string; timezone: string }) {
   return { id: user.id, name: user.name, email: user.email, timezone: user.timezone };
 }
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
+
+// Sign in with a Google ID token from Google Identity Services on the client.
+router.post("/google", async (req, res, next) => {
+  try {
+    if (!googleClient || !GOOGLE_CLIENT_ID) {
+      res.status(501).json({ message: "Google sign-in is not configured on the server" });
+      return;
+    }
+    const { credential } = z.object({ credential: z.string().min(1) }).parse(req.body);
+
+    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
+    const payload = ticket.getPayload();
+    if (!payload?.email || payload.email_verified === false) {
+      res.status(401).json({ message: "Could not verify your Google account" });
+      return;
+    }
+
+    const email = payload.email.toLowerCase();
+    const name = payload.name || payload.given_name || email.split("@")[0];
+
+    // Link by email: existing accounts sign in, new ones are created (no password).
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      user = await prisma.user.create({ data: { email, name, passwordHash: "" } });
+    }
+
+    const token = signToken(user.id);
+    res.cookie(AUTH_COOKIE, token, cookieOptions);
+    res.json({ user: publicUser(user), token });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.post("/register", async (req, res, next) => {
   try {
