@@ -231,7 +231,7 @@ a { color: inherit; text-decoration: none; }
 }
 .scoreCircle::before { content: ""; position: absolute; inset: 12px; background: var(--panel); border-radius: 50%; }
 .scoreCircle span { position: relative; font-size: 32px; font-weight: 800; line-height: 1; }
-.scoreCircle small { position: relative; color: var(--muted); font-weight: 600; align-self: flex-end; margin-bottom: 6px; }
+.scoreCircle small { position: relative; color: var(--muted); font-weight: 600; }
 .scoreCircle.small { width: 64px; height: 64px; }
 .scoreCircle.small::before { inset: 7px; }
 .scoreCircle.small span { font-size: 20px; }
