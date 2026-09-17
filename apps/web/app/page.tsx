@@ -63,9 +63,8 @@ export default function DashboardPage() {
   const locked = Boolean(plan.closedAt);
   const completedValue = plan.goals.reduce((s, g) => s + STATUS_VALUE[g.status], 0);
   const progress = plan.goals.length ? Math.round((completedValue / plan.goals.length) * 100) : 0;
-  // Once the day is closed we have a real composite score; before that we show a
-  // live estimate from progress. With no goals there's nothing to score yet.
-  const hasScore = Boolean(plan.dailySummary) || plan.goals.length > 0;
+  // Starts at 0 with no goals; updates live from progress as goals are added and
+  // their status changes; becomes the real composite score once the day is closed.
   const score = plan.dailySummary?.dailyScore ?? progress;
   const actualTotal = plan.actualMinutes + plan.unplannedMinutes;
 
@@ -155,11 +154,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="panel scorePanel">
-          <div className="scoreCircle" style={{ ["--score" as string]: hasScore ? score : 0 }}>
-            <span>{hasScore ? score : "—"}</span><small>/100</small>
+          <div className="scoreCircle" style={{ ["--score" as string]: score }}>
+            <span>{score}</span><small>/100</small>
           </div>
           <h2>Daily Score</h2>
-          {!hasScore && <p className="muted scoreHint">Add goals to start scoring your day.</p>}
           <div className="scoreRows">
             <Metric label="Goals completed" value={plan.dailySummary?.completionRate ?? progress} />
             <Metric label="Priority goals" value={plan.dailySummary?.priorityScore ?? 0} />
