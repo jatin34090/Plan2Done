@@ -42,8 +42,21 @@ router.post("/google", async (req, res, next) => {
     }
     const { credential } = z.object({ credential: z.string().min(1) }).parse(req.body);
 
-    const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
-    const payload = ticket.getPayload();
+    // Verify the token separately so an audience/client-id mismatch returns a
+    // clear 401 (not a generic 500) and is easy to spot in the logs.
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
+      payload = ticket.getPayload();
+    } catch (verifyError) {
+      console.error("Google token verification failed:", verifyError);
+      res.status(401).json({
+        message:
+          "Google verification failed — check that GOOGLE_CLIENT_ID on the API exactly matches the web client ID."
+      });
+      return;
+    }
+
     if (!payload?.email || payload.email_verified === false) {
       res.status(401).json({ message: "Could not verify your Google account" });
       return;
