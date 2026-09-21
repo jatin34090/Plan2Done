@@ -396,8 +396,11 @@ export async function planTomorrow(
 
   const heuristic = { items: heuristicItems, note, source: "heuristic" as const };
 
-  // Nothing to plan and no history — skip the LLM, just return the honest note.
-  if (!aiEnabled || (unfinished.length === 0 && !hasHistory)) return heuristic;
+  // With no unfinished goals there is nothing for the LLM to schedule from, so skip
+  // it entirely and return the honest note (otherwise the model replies with an
+  // unhelpful "no goals were provided" message). Only call the LLM when there is
+  // real work to shape into a plan.
+  if (!aiEnabled || unfinished.length === 0) return heuristic;
 
   const system =
     "You are a planning assistant for Plan2Done. Given unfinished goals, available time, and the user's " +
