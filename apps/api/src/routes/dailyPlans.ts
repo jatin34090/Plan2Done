@@ -133,7 +133,7 @@ router.get("/", async (req: AuthedRequest, res, next) => {
       where,
       ...planQuery,
       orderBy: { date: "desc" },
-      take: 120
+      take: 400
     });
     res.json(plans);
   } catch (error) {

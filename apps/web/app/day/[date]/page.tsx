@@ -55,7 +55,19 @@ export default function DayPage() {
           <div className="tableHead"><span>Goal</span><span>Planned</span><span>Actual</span></div>
           {plan.goals.map((g) => (
             <div className="comparisonRow" key={g.id}>
-              <strong>{PRIORITY_META[g.priority].dot} {g.title}</strong>
+              <div>
+                <strong>{PRIORITY_META[g.priority].dot} {g.title}</strong>
+                {g.tasks.length > 0 && (
+                  <ul className="viewSubtasks">
+                    {g.tasks.map((t) => (
+                      <li key={t.id} className={t.status === "COMPLETED" ? "done" : ""}>
+                        <span className="viewSubtaskMark">{t.status === "COMPLETED" ? "✅" : "⬜"}</span>
+                        <span>{t.title}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <p>{g.plannedOutcome ?? "—"}<br /><span>{formatMinutes(g.expectedMinutes)}</span></p>
               <p>{g.actualOutcome ?? statusSentence(g.status)}<br /><span>{formatMinutes(g.actualMinutes)}</span></p>
             </div>

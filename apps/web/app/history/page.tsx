@@ -81,11 +81,17 @@ export default function HistoryPage() {
           {!loading && plans.length === 0 && <p className="emptyNote">No days recorded yet.</p>}
           {plans.map((p) => {
             const completed = p.goals.filter((g) => g.status === "COMPLETED").length;
+            const subtasks = p.goals.reduce((s, g) => s + g.tasks.length, 0);
+            const subtasksDone = p.goals.reduce((s, g) => s + g.tasks.filter((t) => t.status === "COMPLETED").length, 0);
             return (
               <Link key={p.id} href={`/day/${p.date.slice(0, 10)}`} className="historyRow">
                 <div>
                   <strong>{new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric" }).format(new Date(p.date))}</strong>
-                  <span className="muted">{p.goals.length} goals · {completed} done · {formatMinutes(p.actualMinutes + p.unplannedMinutes)} worked</span>
+                  <span className="muted">
+                    {p.goals.length} goals · {completed} done
+                    {subtasks > 0 && ` · ${subtasksDone}/${subtasks} subtasks`}
+                    {" · "}{formatMinutes(p.actualMinutes + p.unplannedMinutes)} worked
+                  </span>
                 </div>
                 <div className="historyGoals">
                   {p.goals.slice(0, 4).map((g) => (

@@ -117,6 +117,143 @@ router.get("/overview", async (req: AuthedRequest, res, next) => {
   }
 });
 
+/* ----------------------------- date range (for "all time") ----------------------------- */
+
+// Earliest & latest days the user has any plan for — powers the "All time" report range.
+router.get("/range", async (req: AuthedRequest, res, next) => {
+  try {
+    const [first, last] = await Promise.all([
+      prisma.dailyPlan.findFirst({
+        where: { userId: req.userId! },
+        orderBy: { date: "asc" },
+        select: { date: true }
+      }),
+      prisma.dailyPlan.findFirst({
+        where: { userId: req.userId! },
+        orderBy: { date: "desc" },
+        select: { date: true }
+      })
+    ]);
+    res.json({ firstDate: first?.date ?? null, lastDate: last?.date ?? null });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/* ----------------------------- flexible report (day / month / year / custom range) ----------------------------- */
+
+type ReportGroup = "day" | "month" | "year";
+
+function bucketKey(date: Date, group: ReportGroup) {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  if (group === "year") return `${y}`;
+  if (group === "month") return `${y}-${m}`;
+  return `${y}-${m}-${d}`;
+}
+
+router.get("/report", async (req: AuthedRequest, res, next) => {
+  try {
+    const group: ReportGroup = ["day", "month", "year"].includes(String(req.query.group))
+      ? (req.query.group as ReportGroup)
+      : "day";
+
+    const to = req.query.to ? startOfDay(new Date(String(req.query.to))) : startOfDay(new Date());
+    let from: Date;
+    if (req.query.from) {
+      from = startOfDay(new Date(String(req.query.from)));
+    } else {
+      from = new Date(to);
+      from.setUTCDate(from.getUTCDate() - 29); // default: last 30 days
+    }
+    // Include the whole `to` day (plans are stored at UTC start-of-day, so lte `to` is enough,
+    // but guard against callers passing a mid-day timestamp).
+    const toInclusive = new Date(to);
+    toInclusive.setUTCHours(23, 59, 59, 999);
+
+    const plans = await prisma.dailyPlan.findMany({
+      where: { userId: req.userId!, date: { gte: from, lte: toInclusive } },
+      include: { goals: true, dailySummary: true },
+      orderBy: { date: "desc" }
+    });
+
+    interface Acc {
+      key: string;
+      goals: number;
+      completed: number;
+      partial: number;
+      carried: number;
+      plannedMinutes: number;
+      workedMinutes: number;
+      scoreSum: number;
+      scoreDays: number;
+      days: number;
+    }
+    const map = new Map<string, Acc>();
+    for (const p of plans) {
+      if (p.goals.length === 0) continue; // only days with real activity
+      const key = bucketKey(p.date, group);
+      const b: Acc =
+        map.get(key) ??
+        { key, goals: 0, completed: 0, partial: 0, carried: 0, plannedMinutes: 0, workedMinutes: 0, scoreSum: 0, scoreDays: 0, days: 0 };
+      b.goals += p.goals.length;
+      b.completed += p.goals.filter((g) => g.status === "COMPLETED").length;
+      b.partial += p.goals.filter((g) => g.status === "PARTIAL").length;
+      b.carried += p.goals.filter((g) => g.status === "CARRIED_FORWARD").length;
+      b.plannedMinutes += p.plannedMinutes;
+      b.workedMinutes += p.actualMinutes + p.unplannedMinutes;
+      if (p.dailySummary) {
+        b.scoreSum += p.dailySummary.dailyScore;
+        b.scoreDays += 1;
+      }
+      b.days += 1;
+      map.set(key, b);
+    }
+
+    const buckets = [...map.values()]
+      .map((b) => ({
+        key: b.key,
+        goals: b.goals,
+        completed: b.completed,
+        partial: b.partial,
+        carried: b.carried,
+        completionRate: b.goals ? Math.round((b.completed / b.goals) * 100) : 0,
+        plannedMinutes: b.plannedMinutes,
+        workedMinutes: b.workedMinutes,
+        avgScore: b.scoreDays ? Math.round(b.scoreSum / b.scoreDays) : null,
+        days: b.days
+      }))
+      // Zero-padded keys sort chronologically as strings; newest first.
+      .sort((a, b) => (a.key < b.key ? 1 : a.key > b.key ? -1 : 0));
+
+    const totals = buckets.reduce(
+      (t, b) => ({
+        goals: t.goals + b.goals,
+        completed: t.completed + b.completed,
+        carried: t.carried + b.carried,
+        plannedMinutes: t.plannedMinutes + b.plannedMinutes,
+        workedMinutes: t.workedMinutes + b.workedMinutes,
+        activeDays: t.activeDays + b.days
+      }),
+      { goals: 0, completed: 0, carried: 0, plannedMinutes: 0, workedMinutes: 0, activeDays: 0 }
+    );
+
+    res.json({
+      group,
+      from,
+      to,
+      buckets,
+      totals: {
+        ...totals,
+        completionRate: totals.goals ? Math.round((totals.completed / totals.goals) * 100) : 0
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 /* ----------------------------- estimation accuracy ----------------------------- */
 
 router.get("/estimation", async (req: AuthedRequest, res, next) => {

@@ -53,17 +53,25 @@ a { color: inherit; text-decoration: none; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* indeterminate top progress bar shown while an action is in flight */
-.topLoadingBar {
-  position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 60;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  background-size: 40% 100%; background-repeat: no-repeat;
-  animation: loadingSlide 1s infinite linear;
+/* centered busy overlay shown while an action is in flight */
+.busyOverlay {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(16, 24, 40, 0.06);
+  pointer-events: none;
 }
-@keyframes loadingSlide {
-  0% { background-position: -40% 0; }
-  100% { background-position: 140% 0; }
+.busyCard {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+  padding: 20px; box-shadow: 0 12px 34px rgba(16, 24, 40, 0.20);
 }
+.busyCard .spinner { margin: 0; }
+
+/* centered in-page loader (page/section loads) */
+.centerLoading {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 260px;
+}
+.centerLoading .spinner { margin: 0; }
 .isBusy { opacity: 0.6; pointer-events: none; }
 
 /* ---------- auth ---------- */
@@ -373,6 +381,7 @@ a { color: inherit; text-decoration: none; }
 .aiResult { font-size: 13px; color: var(--accent-strong); background: var(--accent-soft); padding: 8px 10px; border-radius: 8px; margin: 0; }
 .tomorrowPlan { display: flex; flex-direction: column; gap: 6px; }
 .tomorrowItem { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 10px; background: var(--surface-2); border-radius: 8px; }
+.tomorrowManual { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 
 /* ---------- modal ---------- */
 .modalOverlay { position: fixed; inset: 0; background: rgba(16, 24, 40, 0.5); display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; z-index: 50; overflow-y: auto; }
@@ -447,6 +456,49 @@ a { color: inherit; text-decoration: none; }
 .barTrack span.warn { background: var(--high); }
 .barRow strong { text-align: right; }
 
+/* ---------- reports ---------- */
+.reportControls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.reportRange { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 13px; background: var(--panel); color: inherit; }
+.rangePicker { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rangeCustom { display: flex; align-items: center; gap: 6px; }
+.rangeCustom input { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; font-size: 13px; background: var(--panel); color: inherit; }
+.rangeCustom span { color: var(--muted); }
+.groupToggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.groupBtn { border: none; background: transparent; padding: 6px 14px; font: inherit; font-size: 13px; cursor: pointer; color: var(--muted); }
+.groupBtn.active { background: var(--accent); color: #fff; }
+.reportTotals { margin-bottom: 16px; }
+.reportTable { display: flex; flex-direction: column; }
+.reportHead, .reportRow { display: grid; grid-template-columns: 1.4fr 0.6fr 0.7fr 1.3fr 0.9fr 0.9fr 0.6fr; gap: 10px; align-items: center; }
+.reportHead { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 8px; border-bottom: 1px solid var(--line); }
+.reportRow { font-size: 13px; padding: 10px 8px; border-bottom: 1px solid var(--line); border-radius: 8px; color: inherit; text-decoration: none; transition: background 0.15s; }
+.reportRow:last-child { border-bottom: none; }
+.reportRow:hover:not(.static) { background: var(--surface-2); }
+.reportRow.static { cursor: default; }
+.reportDay { display: flex; flex-direction: column; gap: 2px; font-weight: 600; }
+.reportClosed { font-style: normal; font-size: 11px; color: var(--accent); font-weight: 600; }
+.reportBar { height: 6px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin-bottom: 4px; }
+.reportBar i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+
+/* ---------- read-only subtasks (history / day view) ---------- */
+.viewSubtasks { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.viewSubtasks li { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.viewSubtasks li.done span { text-decoration: line-through; }
+.viewSubtaskMark { font-size: 11px; }
+
+/* ---------- activity feed (date-wise) ---------- */
+.activityDay { display: flex; flex-direction: column; gap: 12px; }
+.activityDayHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.activityDayHead > div { display: flex; flex-direction: column; gap: 2px; }
+.activityDate { font-size: 16px; font-weight: 700; color: inherit; text-decoration: none; }
+.activityDate:hover { color: var(--accent); }
+.activityItems { display: flex; flex-direction: column; gap: 10px; }
+.activityItem { display: flex; gap: 10px; align-items: flex-start; }
+.activityIcon { font-size: 15px; line-height: 1.4; flex-shrink: 0; width: 20px; text-align: center; }
+.activityBody { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.activityTitle { font-size: 14px; font-weight: 600; }
+.activityMeta { font-size: 12px; color: var(--muted); }
+.activityBody .viewSubtasks { margin-top: 4px; }
+
 /* ---------- responsive ---------- */
 @media (max-width: 860px) {
   .statRow, .twoCol, .aiTools { grid-template-columns: 1fr; }
@@ -487,6 +539,8 @@ a { color: inherit; text-decoration: none; }
   .comparisonRow p:nth-of-type(2)::before { content: "Actual — "; font-weight: 700; color: var(--accent); }
   .metricRow { grid-template-columns: 1fr 56px 38px; }
   .barRow { grid-template-columns: 104px 1fr 38px; }
+  .reportTable { overflow-x: auto; }
+  .reportHead, .reportRow { min-width: 520px; }
 }
 
 /* Larger tap targets on touch devices */

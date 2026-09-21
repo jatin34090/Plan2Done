@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AlertTriangle, BarChart3, Clock3, Target, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { AlertTriangle, BarChart3, CalendarDays, Clock3, Target, TrendingUp } from "lucide-react";
 import { api } from "../lib/api";
 import { formatMinutes } from "../lib/types";
+import { RangePicker } from "../components/RangePicker";
 
 interface Weekly {
   goalsPlanned: number;
@@ -37,6 +39,46 @@ interface Estimation {
   message: string;
 }
 
+type ReportGroup = "day" | "month" | "year";
+
+interface ReportBucket {
+  key: string;
+  goals: number;
+  completed: number;
+  partial: number;
+  carried: number;
+  completionRate: number;
+  plannedMinutes: number;
+  workedMinutes: number;
+  avgScore: number | null;
+  days: number;
+}
+
+interface ReportResponse {
+  group: ReportGroup;
+  buckets: ReportBucket[];
+  totals: {
+    goals: number;
+    completed: number;
+    carried: number;
+    plannedMinutes: number;
+    workedMinutes: number;
+    activeDays: number;
+    completionRate: number;
+  };
+}
+
+function bucketLabel(key: string, group: ReportGroup) {
+  if (group === "year") return key;
+  const parts = key.split("-").map(Number);
+  if (group === "month") {
+    return new Intl.DateTimeFormat("en", { month: "long", year: "numeric" }).format(new Date(parts[0], parts[1] - 1, 1));
+  }
+  return new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(
+    new Date(parts[0], parts[1] - 1, parts[2])
+  );
+}
+
 const REASON_LABEL: Record<string, string> = {
   NOT_ENOUGH_TIME: "Not enough time",
   LOW_PRIORITY: "Low priority",
@@ -50,12 +92,30 @@ export default function AnalyticsPage() {
   const [weekly, setWeekly] = useState<Weekly | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [estimation, setEstimation] = useState<Estimation | null>(null);
+  const [report, setReport] = useState<ReportResponse | null>(null);
+  const [group, setGroup] = useState<ReportGroup>("day");
+  const [range, setRange] = useState<{ from: string; to: string } | null>(null);
+  const [firstDate, setFirstDate] = useState<string | null>(null);
+  const [reportLoading, setReportLoading] = useState(true);
 
   useEffect(() => {
     api.get<Weekly>("/api/analytics/weekly").then(setWeekly).catch(() => {});
     api.get<Overview>("/api/analytics/overview?days=90").then(setOverview).catch(() => {});
     api.get<Estimation>("/api/analytics/estimation").then(setEstimation).catch(() => {});
+    api.get<{ firstDate: string | null }>("/api/analytics/range").then((r) => setFirstDate(r.firstDate)).catch(() => {});
   }, []);
+
+  const onRangeChange = useCallback((r: { from: string; to: string }) => setRange(r), []);
+
+  useEffect(() => {
+    if (!range) return;
+    setReportLoading(true);
+    api
+      .get<ReportResponse>(`/api/analytics/report?from=${range.from}&to=${range.to}&group=${group}`)
+      .then(setReport)
+      .catch(() => setReport(null))
+      .finally(() => setReportLoading(false));
+  }, [range, group]);
 
   return (
     <div className="dashboard">
@@ -82,6 +142,79 @@ export default function AnalyticsPage() {
           </div>
         )}
         {weekly?.topAchievement && <p className="highlight">🏆 Top achievement: <strong>{weekly.topAchievement}</strong></p>}
+      </section>
+
+      {/* Report builder: day / month / year over any range */}
+      <section className="panel">
+        <div className="panelHeadRow">
+          <h2><CalendarDays size={18} /> Report</h2>
+          <div className="reportControls">
+            <div className="groupToggle" role="tablist" aria-label="Group by">
+              {(["day", "month", "year"] as ReportGroup[]).map((g) => (
+                <button
+                  key={g}
+                  className={group === g ? "groupBtn active" : "groupBtn"}
+                  onClick={() => setGroup(g)}
+                >
+                  {g[0].toUpperCase() + g.slice(1)}
+                </button>
+              ))}
+            </div>
+            <RangePicker firstDate={firstDate} onChange={onRangeChange} />
+          </div>
+        </div>
+
+        {report && (
+          <div className="analyticsGrid reportTotals">
+            <Stat label="Active days" value={String(report.totals.activeDays)} icon={<CalendarDays size={16} />} />
+            <Stat label="Goals" value={String(report.totals.goals)} icon={<Target size={16} />} />
+            <Stat label="Completed" value={`${report.totals.completed} (${report.totals.completionRate}%)`} icon={<TrendingUp size={16} />} />
+            <Stat label="Worked" value={formatMinutes(report.totals.workedMinutes)} icon={<Clock3 size={16} />} />
+          </div>
+        )}
+
+        {reportLoading && <div className="spinner" />}
+        {!reportLoading && report && report.buckets.length === 0 && (
+          <p className="emptyNote">No days with goals in this range yet.</p>
+        )}
+        {!reportLoading && report && report.buckets.length > 0 && (
+          <div className="reportTable">
+            <div className="reportHead">
+              <span>{group === "day" ? "Day" : group === "month" ? "Month" : "Year"}</span>
+              <span>Goals</span>
+              <span>Done</span>
+              <span>Completion</span>
+              <span>Planned</span>
+              <span>Worked</span>
+              <span>{group === "day" ? "Score" : "Avg score"}</span>
+            </div>
+            {report.buckets.map((b) => {
+              const label = bucketLabel(b.key, group);
+              const inner = (
+                <>
+                  <span className="reportDay">
+                    {label}
+                    {group !== "day" && <em className="reportClosed">{b.days} day{b.days === 1 ? "" : "s"}</em>}
+                  </span>
+                  <span>{b.goals}</span>
+                  <span>{b.completed}{b.carried > 0 ? ` · ${b.carried}→` : ""}</span>
+                  <span>
+                    <div className="reportBar"><i style={{ width: `${b.completionRate}%` }} /></div>
+                    {b.completionRate}%
+                  </span>
+                  <span>{formatMinutes(b.plannedMinutes)}</span>
+                  <span>{formatMinutes(b.workedMinutes)}</span>
+                  <span>{b.avgScore ?? "—"}</span>
+                </>
+              );
+              return group === "day" ? (
+                <Link key={b.key} href={`/day/${b.key}`} className="reportRow">{inner}</Link>
+              ) : (
+                <div key={b.key} className="reportRow static">{inner}</div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Estimation accuracy */}

@@ -140,3 +140,42 @@ export function formatMinutes(minutes: number) {
   if (m === 0) return `${h}h`;
   return `${h}h ${m}m`;
 }
+
+/* ---------- date range presets (reports + activity) ---------- */
+
+export type RangePreset = "7" | "30" | "90" | "month" | "year" | "all" | "custom";
+
+export const RANGE_PRESETS: { value: RangePreset; label: string }[] = [
+  { value: "7", label: "Last 7 days" },
+  { value: "30", label: "Last 30 days" },
+  { value: "90", label: "Last 90 days" },
+  { value: "month", label: "This month" },
+  { value: "year", label: "This year" },
+  { value: "all", label: "All time" },
+  { value: "custom", label: "Custom range" }
+];
+
+function ymd(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** Resolve a preset to concrete { from, to } YYYY-MM-DD strings. `firstDate` powers "all time". */
+export function resolveRange(preset: RangePreset, firstDate?: string | null): { from: string; to: string } {
+  const now = new Date();
+  const to = ymd(now);
+  if (preset === "month") return { from: ymd(new Date(now.getFullYear(), now.getMonth(), 1)), to };
+  if (preset === "year") return { from: ymd(new Date(now.getFullYear(), 0, 1)), to };
+  if (preset === "all") return { from: firstDate ? firstDate.slice(0, 10) : ymd(new Date(now.getFullYear(), 0, 1)), to };
+  if (preset === "7" || preset === "30" || preset === "90") {
+    const from = new Date(now);
+    from.setDate(from.getDate() - (Number(preset) - 1));
+    return { from: ymd(from), to };
+  }
+  // custom: caller supplies its own dates; return a sensible default (last 30 days)
+  const from = new Date(now);
+  from.setDate(from.getDate() - 29);
+  return { from: ymd(from), to };
+}

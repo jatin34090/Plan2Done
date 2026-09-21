@@ -54,13 +54,19 @@ export default function DashboardPage() {
   const [eveningText, setEveningText] = useState("");
   const [eveningResult, setEveningResult] = useState<string | null>(null);
   const [tomorrow, setTomorrow] = useState<{ items: { title: string; priority: Priority; expectedMinutes: number }[]; note: string } | null>(null);
+  const [tomorrowMsg, setTomorrowMsg] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
+
+  // Manual "add a goal to tomorrow" form
+  const [tmTitle, setTmTitle] = useState("");
+  const [tmPriority, setTmPriority] = useState<Priority>("MEDIUM");
+  const [tmMinutes, setTmMinutes] = useState(60);
 
   useEffect(() => {
     api.get<StreakData>("/api/analytics/streak").then(setStreak).catch(() => {});
   }, [plan?.goals.length]);
 
-  if (loading) return <div className="pagePad"><div className="spinner" /></div>;
+  if (loading) return <div className="centerLoading"><div className="spinner" /></div>;
   if (error || !plan) return <div className="pagePad"><p className="formError">{error ?? "No plan"}</p></div>;
 
   const locked = Boolean(plan.closedAt);
@@ -100,6 +106,7 @@ export default function DashboardPage() {
 
   async function runTomorrow() {
     setAiBusy(true);
+    setTomorrowMsg(null);
     try {
       const res = await actions.planTomorrow(360);
       setTomorrow(res);
@@ -108,9 +115,44 @@ export default function DashboardPage() {
     }
   }
 
+  // Add the AI/heuristic-generated items to tomorrow's plan.
+  async function addGeneratedToTomorrow() {
+    if (!tomorrow || tomorrow.items.length === 0) return;
+    setAiBusy(true);
+    try {
+      await actions.addGoalsToTomorrow(tomorrow.items);
+      setTomorrowMsg(`Added ${tomorrow.items.length} goal${tomorrow.items.length === 1 ? "" : "s"} to tomorrow.`);
+      setTomorrow(null);
+      setDayOffset(1); // jump to tomorrow so you can review/edit
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
+  // Manually add a single custom goal to tomorrow's plan.
+  async function addManualToTomorrow(e: React.FormEvent) {
+    e.preventDefault();
+    if (!tmTitle.trim()) return;
+    setAiBusy(true);
+    try {
+      await actions.addGoalsToTomorrow([{ title: tmTitle.trim(), priority: tmPriority, expectedMinutes: tmMinutes }]);
+      setTomorrowMsg(`Added "${tmTitle.trim()}" to tomorrow.`);
+      setTmTitle("");
+      setTmPriority("MEDIUM");
+      setTmMinutes(60);
+      setDayOffset(1);
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
   return (
     <div className="dashboard">
-      {actions.busy && <div className="topLoadingBar" aria-hidden />}
+      {actions.busy && (
+        <div className="busyOverlay" aria-live="polite" aria-busy="true">
+          <div className="busyCard"><div className="spinner" /></div>
+        </div>
+      )}
       {/* Header */}
       <section className="dayHeader">
         <div>
@@ -287,7 +329,7 @@ export default function DashboardPage() {
           {/* Plan tomorrow stays available after closing — that's when you'd want it. */}
           <div className="aiTool">
             <h3><CalendarDays size={16} /> Plan my tomorrow</h3>
-            <p className="muted">Suggests a realistic plan from unfinished goals and your typical throughput.</p>
+            <p className="muted">Suggests a realistic plan from unfinished goals and your typical throughput — or add your own goals for tomorrow directly.</p>
             <button className="primaryButton" disabled={aiBusy} onClick={runTomorrow}>Generate tomorrow&apos;s plan</button>
             {tomorrow && (
               <div className="tomorrowPlan">
@@ -298,29 +340,51 @@ export default function DashboardPage() {
                   </div>
                 ))}
                 <p className="aiResult">{tomorrow.note}</p>
-                {tomorrow.items.length > 0 ? (
-                  <button
-                    className="primaryButton"
-                    disabled={aiBusy}
-                    onClick={async () => {
-                      setAiBusy(true);
-                      try {
-                        await actions.addGoalsToTomorrow(tomorrow.items);
-                        setTomorrow(null);
-                        setDayOffset(1); // jump to tomorrow so you can review/edit
-                      } finally {
-                        setAiBusy(false);
-                      }
-                    }}
-                  >
+                {tomorrow.items.length > 0 && (
+                  <button className="primaryButton" disabled={aiBusy} onClick={addGeneratedToTomorrow}>
                     <Plus size={16} /> Add {tomorrow.items.length} to tomorrow
-                  </button>
-                ) : (
-                  <button className="ghostButton textBtn" onClick={() => setDayOffset(1)}>
-                    Go to tomorrow to add goals →
                   </button>
                 )}
               </div>
+            )}
+
+            {/* Manual add — always available, works even with no unfinished goals. */}
+            <form className="tomorrowManual" onSubmit={addManualToTomorrow}>
+              <span className="subtasksLabel">Add a goal to tomorrow</span>
+              <input
+                className="goalTitleInput"
+                value={tmTitle}
+                onChange={(e) => setTmTitle(e.target.value)}
+                placeholder="e.g. Draft the launch email"
+              />
+              <div className="addGoalControls">
+                <select className="goalPriority" value={tmPriority} onChange={(e) => setTmPriority(e.target.value as Priority)}>
+                  {(["CRITICAL", "HIGH", "MEDIUM", "LOW"] as Priority[]).map((p) => (
+                    <option key={p} value={p}>{PRIORITY_META[p].dot} {PRIORITY_META[p].label}</option>
+                  ))}
+                </select>
+                <label className="minField">
+                  <input
+                    type="number"
+                    min={0}
+                    step={15}
+                    value={tmMinutes}
+                    onChange={(e) => setTmMinutes(Number(e.target.value))}
+                    aria-label="Estimated minutes"
+                  />
+                  <span>min</span>
+                </label>
+                <button className="primaryButton addBtn" type="submit" disabled={aiBusy || !tmTitle.trim()}>
+                  <Plus size={16} /> Add
+                </button>
+              </div>
+            </form>
+
+            {tomorrowMsg && (
+              <p className="aiResult">
+                {tomorrowMsg}{" "}
+                <button className="ghostButton textBtn" onClick={() => setDayOffset(1)}>View tomorrow →</button>
+              </p>
             )}
           </div>
         </div>
