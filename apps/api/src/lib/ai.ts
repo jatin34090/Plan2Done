@@ -371,7 +371,8 @@ export async function planTomorrow(
   unfinished: Goal[],
   availableMinutes: number,
   avgDailyCompleted: number,
-  historyDays = 0
+  historyDays = 0,
+  plannedToday = unfinished.length
 ): Promise<{ items: TomorrowPlanItem[]; note: string; source: "ai" | "heuristic" }> {
   const hasHistory = historyDays >= 3 && avgDailyCompleted > 0;
   const cap = Math.max(2, Math.round(avgDailyCompleted || 4));
@@ -381,13 +382,14 @@ export async function planTomorrow(
     expectedMinutes: goal.expectedMinutes || 60
   }));
 
-  // Build an honest note that doesn't invent history for new users.
+  // Build an honest note. Distinguish "no goals added today" from "all done" —
+  // both leave `unfinished` empty, but only the latter earns "nice work".
   let note: string;
   if (unfinished.length === 0) {
     note =
-      historyDays > 0
-        ? "No unfinished goals to carry over — nice work. Add tomorrow's top priorities when you're ready."
-        : "You haven't added any goals yet. Add a few today and tomorrow I'll suggest a realistic plan from what's left plus your usual pace.";
+      plannedToday === 0
+        ? "You haven't added any goals today, so there's nothing to carry over. Add today's goals, or use the field below to add goals straight to tomorrow."
+        : "No unfinished goals to carry over — nice work. Add tomorrow's top priorities when you're ready.";
   } else if (hasHistory) {
     note = `Based on your recent days you finish about ${cap} goals a day, so keep tomorrow focused.`;
   } else {

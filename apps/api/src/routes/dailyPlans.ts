@@ -618,7 +618,7 @@ router.post("/:dailyPlanId/plan-tomorrow", async (req: AuthedRequest, res, next)
       ? completedCounts.reduce((a, b) => a + b, 0) / completedCounts.length
       : 0;
 
-    const suggestion = await planTomorrow(unfinished, availableMinutes, avg, activeDays.length);
+    const suggestion = await planTomorrow(unfinished, availableMinutes, avg, activeDays.length, plan.goals.length);
     res.json(suggestion);
   } catch (error) {
     next(error);
