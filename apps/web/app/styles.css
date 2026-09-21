@@ -422,11 +422,19 @@ a { color: inherit; text-decoration: none; }
 .searchBar input:focus { box-shadow: none; }
 .searchBar .primaryButton { flex: none; }
 .historyList { display: flex; flex-direction: column; }
-.historyRow { display: flex; align-items: center; gap: 14px; padding: 14px 8px; border-bottom: 1px solid var(--line); transition: background 0.15s; border-radius: 8px; }
+.historyDay { border-bottom: 1px solid var(--line); }
+.historyDay:last-child { border-bottom: none; }
+.historyRow {
+  width: 100%; display: flex; align-items: center; gap: 14px; padding: 14px 8px;
+  background: transparent; border: none; border-radius: 8px; cursor: pointer;
+  font: inherit; color: inherit; text-align: left; transition: background 0.15s;
+}
 .historyRow:hover { background: var(--surface-2); }
-.historyRow:last-child { border-bottom: none; }
-.historyRow > div:first-child { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.expandChevron { flex: none; display: flex; color: var(--muted); }
+.historyRowMain { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .historyGoals { display: flex; gap: 2px; font-size: 12px; }
+.historyDayBody { display: flex; flex-direction: column; gap: 12px; padding: 4px 8px 16px 34px; }
+.openDayLink { align-self: flex-start; }
 .historyScore { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
 .closedTag { font-size: 11px; background: var(--surface-2); color: var(--muted); padding: 4px 8px; border-radius: 999px; }
 .searchResult { display: flex; flex-direction: column; gap: 2px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; }
@@ -485,12 +493,7 @@ a { color: inherit; text-decoration: none; }
 .viewSubtasks li.done span { text-decoration: line-through; }
 .viewSubtaskMark { font-size: 11px; }
 
-/* ---------- activity feed (date-wise) ---------- */
-.activityDay { display: flex; flex-direction: column; gap: 12px; }
-.activityDayHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
-.activityDayHead > div { display: flex; flex-direction: column; gap: 2px; }
-.activityDate { font-size: 16px; font-weight: 700; color: inherit; text-decoration: none; }
-.activityDate:hover { color: var(--accent); }
+/* ---------- day activity items (expanded history rows) ---------- */
 .activityItems { display: flex; flex-direction: column; gap: 10px; }
 .activityItem { display: flex; gap: 10px; align-items: flex-start; }
 .activityIcon { font-size: 15px; line-height: 1.4; flex-shrink: 0; width: 20px; text-align: center; }

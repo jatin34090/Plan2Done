@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Activity, BarChart3, CalendarClock, History, LogOut, Target } from "lucide-react";
+import { BarChart3, CalendarClock, History, LogOut, Target } from "lucide-react";
 import { useAuth } from "../lib/auth";
 
 const PUBLIC_ROUTES = ["/login", "/register"];
 
 const NAV = [
   { href: "/", label: "Today", icon: Target },
-  { href: "/activity", label: "Activity", icon: Activity },
   { href: "/history", label: "History", icon: History },
   { href: "/analytics", label: "Analytics", icon: BarChart3 }
 ];
